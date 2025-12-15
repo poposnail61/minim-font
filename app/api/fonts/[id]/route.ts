@@ -30,6 +30,30 @@ export async function DELETE(
             // If deleting from release, sync with GitHub
             if (dirType === "release") {
                 try {
+                    const readmePath = path.join(process.cwd(), "README.md");
+                    let readmeUpdated = false;
+
+                    // Check if README.md exists using fs.access for async check
+                    try {
+                        await fs.access(readmePath); // Check if file exists and is accessible
+                        let readmeContent = await fs.readFile(readmePath, 'utf-8');
+                        const lines = readmeContent.split('\n');
+                        const fontRowPart = `| \`${id}\` |`;
+
+                        const newLines = lines.filter(line => !line.includes(fontRowPart));
+
+                        if (newLines.length !== lines.length) {
+                            await fs.writeFile(readmePath, newLines.join('\n'), 'utf-8');
+                            readmeUpdated = true;
+                        }
+                    } catch (e: any) {
+                        if (e.code === 'ENOENT') {
+                            console.log("README.md not found, skipping update.");
+                        } else {
+                            console.error("Failed to update README during delete:", e);
+                        }
+                    }
+
                     // Configure git user logic (optional but good safety)
                     try {
                         execSync('git config user.name "Minim Font Manager"', { cwd: process.cwd(), stdio: 'ignore' });
@@ -38,6 +62,9 @@ export async function DELETE(
 
                     // Using 'git add -A' to catch the deletion of the folder
                     execSync(`git add dist`, { cwd: process.cwd() });
+                    if (readmeUpdated) {
+                        execSync(`git add README.md`, { cwd: process.cwd() });
+                    }
 
                     const commitMsg = `release: delete font ${id}`;
                     execSync(`git commit -m "${commitMsg}"`, { cwd: process.cwd() });

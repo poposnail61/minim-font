@@ -52,6 +52,59 @@ export async function POST(req: NextRequest) {
         // dist/[Family]/css/
         fs.cpSync(sourceCssDir, releaseCssDir, { recursive: true });
 
+        // Update README.md
+        try {
+            const readmePath = path.join(process.cwd(), "README.md");
+            if (fs.existsSync(readmePath)) {
+                let readmeContent = fs.readFileSync(readmePath, 'utf-8');
+                const tableHeader = "| Font ID | Font Family | Example CDN URL |";
+                const tableDivider = "| :--- | :--- | :--- |";
+
+                // Check if table exists, if not, create it
+                if (!readmeContent.includes(tableHeader)) {
+                    // Find insertion point (e.g., before Features or at end)
+                    const insertMarker = "## Features";
+                    const newTable = `### Supported Fonts\n\n${tableHeader}\n${tableDivider}\n\n`;
+                    if (readmeContent.includes(insertMarker)) {
+                        readmeContent = readmeContent.replace(insertMarker, `${newTable}${insertMarker}`);
+                    } else {
+                        readmeContent += `\n${newTable}`;
+                    }
+                }
+
+                // Check if font already exists in table
+                const fontRowPart = `| \`${targetFontName}\` |`;
+                if (!readmeContent.includes(fontRowPart)) {
+                    const newRow = `| \`${targetFontName}\` | \`${targetFontName}\` | \`.../dist/${targetFontName}/css/${targetFontName}.css\` |`;
+                    // Insert after the last pipe character of the table section
+                    // We look for the divider and append after the last row in that block.
+                    // Simplified regex approach: find the table block and append.
+                    // Or simple replacement: find the divider and insert after it (top insertion) or find the end of table.
+                    // Let's Insert at the bottom of the table. Finds the last line starting with `|` after `tableDivider`.
+
+                    const lines = readmeContent.split('\n');
+                    let lastTableIndex = -1;
+                    for (let i = 0; i < lines.length; i++) {
+                        if (lines[i].trim().startsWith('|')) {
+                            lastTableIndex = i;
+                        } else if (lastTableIndex !== -1 && lines[i].trim() === "") {
+                            // End of table block found
+                            break;
+                        }
+                    }
+
+                    if (lastTableIndex !== -1) {
+                        lines.splice(lastTableIndex + 1, 0, newRow);
+                        readmeContent = lines.join('\n');
+                        fs.writeFileSync(readmePath, readmeContent, 'utf-8');
+                        execSync('git add README.md', { cwd: process.cwd() });
+                    }
+                }
+            }
+        } catch (readmeError) {
+            console.error('Failed to update README:', readmeError);
+        }
+
         // Git operations
         try {
             // Configure git user (if not already configured globally)
