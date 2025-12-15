@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Upload, FileType, CheckCircle, Loader2, Download, Trash2, X } from "lucide-react";
+import { Upload, FileType, CheckCircle, Loader2, Download, Trash2, X, Copy } from "lucide-react";
 
 export default function Home() {
     const [isDragOver, setIsDragOver] = useState(false);
@@ -116,6 +116,14 @@ export default function Home() {
             setError("Failed to load CSS content for this font.");
             console.error("Failed to load css content", e);
         }
+    };
+
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text).then(() => {
+            alert("Copied to clipboard!");
+        }, (err) => {
+            console.error('Could not copy text: ', err);
+        });
     };
 
     const handleDragOver = (e: React.DragEvent) => {
@@ -408,7 +416,18 @@ export default function Home() {
                                     <div className="text-xs text-gray-500">
                                         Release: {new Date(font.createdAt).toLocaleDateString()}
                                     </div>
-                                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                const cdnUrl = `https://cdn.jsdelivr.net/gh/poposnail61/minim-font@main/dist/${font.fontFamily}/css/${font.fontFamily}.css`;
+                                                copyToClipboard(cdnUrl);
+                                            }}
+                                            className="p-1 rounded-md bg-blue-500/20 text-blue-400 hover:bg-blue-500/30"
+                                            title="Copy CDN URL"
+                                        >
+                                            <Copy className="w-3.5 h-3.5" />
+                                        </button>
                                         <button
                                             onClick={(e) => deleteFont(e, font.id, font.fontFamily, true)}
                                             className="p-1 rounded-md bg-red-500/20 text-red-400 hover:bg-red-500/30"
