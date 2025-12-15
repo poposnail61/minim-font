@@ -28,6 +28,7 @@ body {
 | :--- | :--- | :--- |
 | `MinimBaseVF` | `MinimBaseVF` | `.../dist/MinimBaseVF/MinimBaseVF.css` |
 | `MinimSoftVF` | `MinimSoftVF` | `.../dist/MinimSoftVF/MinimSoftVF.css` |
+| `ReadmeTest` | `ReadmeTest` | `.../dist/ReadmeTest/css/ReadmeTest.css` |
 
 ## Features
 - **Automatic Subsetting**: Python script (using `fonttools`) splits fonts by unicode ranges (Hangul, Latin, etc.) for optimal loading.
