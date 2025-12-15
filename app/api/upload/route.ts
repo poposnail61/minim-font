@@ -23,39 +23,58 @@ export async function POST(req: NextRequest) {
 
         // Define local paths
         const publicDir = path.join(process.cwd(), "public");
-        const uploadDir = path.join(publicDir, "test", fontId);
+        const baseDir = path.join(publicDir, "test", fontFamily); // Use Family Name directly
 
-        // Create directory (recursive)
-        await fs.mkdir(uploadDir, { recursive: true });
+        // Define subdirectories
+        const originalDir = path.join(baseDir, "original");
+        const fontsDir = path.join(baseDir, "fonts");
+        const cssDir = path.join(baseDir, "css");
 
-        // Save uploaded file
-        const filePath = path.join(uploadDir, originalName);
+        // Create directories (recursive)
+        await fs.mkdir(originalDir, { recursive: true });
+        await fs.mkdir(fontsDir, { recursive: true });
+        await fs.mkdir(cssDir, { recursive: true });
+
+        // Save uploaded file to 'original'
+        const filePath = path.join(originalDir, originalName);
         await fs.writeFile(filePath, buffer);
 
         // Path to Python script
         const scriptPath = path.join(process.cwd(), "scripts", "split_font.py");
-        // Path to Python executable in venv
         const pythonPath = path.join(process.cwd(), "venv", "bin", "python");
-
-        // Path to reference CSS
         const refCssPath = path.join(process.cwd(), "scripts", "google_fonts_reference.css");
 
         // Execute Python script
-        // Usage: python split_font.py <font_path> <reference_css_path> [output_dir]
-        const command = `"${pythonPath}" "${scriptPath}" "${filePath}" "${refCssPath}" "${uploadDir}"`;
+        // Output to 'fonts' directory initially
+        const command = `"${pythonPath}" "${scriptPath}" "${filePath}" "${refCssPath}" "${fontsDir}"`;
         console.log("Executing:", command);
 
         const { stdout, stderr } = await execPromise(command);
         console.log("Stdout:", stdout);
         if (stderr) console.error("Stderr:", stderr);
 
-        // The script generates {filename}.css
-        const cssFileName = fontFamily + ".css";
-        const cssUrl = `/test/${fontId}/${cssFileName}`;
+        // Move generated CSS file to 'css' directory
+        // The script generates {FamilyName}.css in the output dir (fontsDir)
+        const generatedCssName = fontFamily + ".css";
+        const generatedCssPath = path.join(fontsDir, generatedCssName);
+        const targetCssPath = path.join(cssDir, generatedCssName);
+
+        if (await fs.stat(generatedCssPath).catch(() => false)) {
+            // Read CSS content to update font paths
+            let cssContent = await fs.readFile(generatedCssPath, 'utf-8');
+            // Regex to replace url('...') with url('../fonts/...') because CSS is in css/ folder and fonts in fonts/ folder
+            // Original CSS has just filenames like url('Subset.woff2')
+            cssContent = cssContent.replace(/url\(['"]?([^'")]+)['"]?\)/g, "url('../fonts/$1')");
+
+            await fs.writeFile(targetCssPath, cssContent);
+            await fs.unlink(generatedCssPath); // Remove original from fonts dir
+        }
+
+        const cssUrl = `/test/${fontFamily}/css/${generatedCssName}`;
 
         return NextResponse.json({
             message: "Upload and processing complete",
-            fontId,
+            fontId: fontFamily, // Use Family Name as ID for simplicity in new structure
             fontFamily,
             cssUrl,
             logs: stdout

@@ -13,6 +13,7 @@ export default function Home() {
     const [previewFontSize, setPreviewFontSize] = useState(24);
     const [previewFontWeight, setPreviewFontWeight] = useState(400);
     const [releaseTargetFont, setReleaseTargetFont] = useState<{ id: string, fontFamily: string } | null>(null);
+    const [deleteTargetFont, setDeleteTargetFont] = useState<{ id: string, fontFamily: string, isRelease: boolean } | null>(null);
 
     useEffect(() => {
         fetchFonts();
@@ -37,17 +38,24 @@ export default function Home() {
         }
     };
 
-    const deleteFont = async (e: React.MouseEvent, fontId: string) => {
-        e.stopPropagation(); // Prevent loading the font we are deleting
-        if (!confirm("Are you sure you want to delete this font?")) return;
+    const deleteFont = (e: React.MouseEvent, fontId: string, fontFamily: string, isRelease: boolean = false) => {
+        e.stopPropagation();
+        setDeleteTargetFont({ id: fontId, fontFamily, isRelease });
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!deleteTargetFont) return;
 
         try {
-            const res = await fetch(`/api/fonts/${fontId}`, { method: "DELETE" });
+            const apiEndpoint = `/api/fonts/${deleteTargetFont.id}?dir=${deleteTargetFont.isRelease ? 'release' : 'test'}`;
+            const res = await fetch(apiEndpoint, { method: 'DELETE' });
+
             if (res.ok) {
-                // Remove from state immediately
-                setSavedFonts(prev => prev.filter(f => f.id !== fontId));
+                // Refresh lists
+                fetchFonts();
+
                 // If the deleted font was active, clear result
-                if (result?.fontId === fontId) {
+                if (result?.fontId === deleteTargetFont.id) {
                     setResult(null);
                 }
             } else {
@@ -55,6 +63,8 @@ export default function Home() {
             }
         } catch (e) {
             console.error("Delete failed", e);
+        } finally {
+            setDeleteTargetFont(null);
         }
     };
 
@@ -170,7 +180,62 @@ export default function Home() {
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-black text-gray-200 selection:bg-gray-800">
-            {/* Custom Modal */}
+            {deleteTargetFont && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-gray-900 border border-gray-700 p-6 rounded-2xl shadow-2xl max-w-md w-full space-y-4 m-4 animate-in zoom-in-95 duration-200">
+                        <div className="space-y-2">
+                            <h3 className="text-xl font-bold text-white">Delete Font?</h3>
+                            <p className="text-gray-400 text-sm">
+                                Are you sure you want to delete <b>{deleteTargetFont.fontFamily}</b>?
+                                <br />
+                                <span className="text-red-400 text-xs mt-1 block">This action cannot be undone.</span>
+                            </p>
+                        </div>
+                        <div className="flex gap-3 justify-end pt-2">
+                            <button
+                                onClick={() => setDeleteTargetFont(null)}
+                                className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleConfirmDelete}
+                                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm font-medium transition-colors"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {deleteTargetFont && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-gray-900 border border-gray-700 p-6 rounded-2xl shadow-2xl max-w-md w-full space-y-4 m-4 animate-in zoom-in-95 duration-200">
+                        <div className="space-y-2">
+                            <h3 className="text-xl font-bold text-white">Delete Font?</h3>
+                            <p className="text-gray-400 text-sm">
+                                Are you sure you want to delete <b>{deleteTargetFont.fontFamily}</b>?
+                                <br />
+                                <span className="text-red-400 text-xs mt-1 block">This action cannot be undone.</span>
+                            </p>
+                        </div>
+                        <div className="flex gap-3 justify-end pt-2">
+                            <button
+                                onClick={() => setDeleteTargetFont(null)}
+                                className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleConfirmDelete}
+                                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm font-medium transition-colors"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             {releaseTargetFont && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-gray-900 border border-gray-700 p-6 rounded-2xl shadow-2xl max-w-md w-full space-y-4 m-4 animate-in zoom-in-95 duration-200">
@@ -214,21 +279,21 @@ export default function Home() {
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
                         <div className="space-y-2">
-                            <p className="text-gray-400 font-medium">1. Add to HTML (Recommended)</p>
+                            <p className="text-gray-400 font-medium">1. HTML (CDN)</p>
                             <div className="bg-black/50 p-3 rounded-lg border border-white/10 font-mono text-gray-300 break-all select-all">
-                                &lt;link rel="stylesheet" href="[CSS_URL]" /&gt;
+                                &lt;link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/poposnail61/minim-font@main/dist/[FontName]/[FontName].css" /&gt;
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <p className="text-gray-400 font-medium">2. Import in CSS</p>
+                            <p className="text-gray-400 font-medium">2. CSS Import (CDN)</p>
                             <div className="bg-black/50 p-3 rounded-lg border border-white/10 font-mono text-gray-300 break-all select-all">
-                                @import url("[CSS_URL]");
+                                @import url("https://cdn.jsdelivr.net/gh/poposnail61/minim-font@main/dist/[FontName]/[FontName].css");
                             </div>
                         </div>
                         <div className="col-span-1 md:col-span-2 space-y-2">
                             <p className="text-gray-400 font-medium">3. Apply Font Family</p>
                             <div className="bg-black/50 p-3 rounded-lg border border-white/10 font-mono text-gray-300 select-all">
-                                font-family: "[FontFamilyName]";
+                                font-family: "[FontName]";
                             </div>
                         </div>
                     </div>
@@ -310,7 +375,7 @@ export default function Home() {
                                             Release
                                         </button>
                                         <button
-                                            onClick={(e) => deleteFont(e, font.id)}
+                                            onClick={(e) => deleteFont(e, font.id, font.fontFamily, false)}
                                             className="p-1 rounded-md bg-red-500/20 text-red-400 hover:bg-red-500/30"
                                             title="Delete"
                                         >
@@ -345,7 +410,7 @@ export default function Home() {
                                     </div>
                                     <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button
-                                            onClick={(e) => deleteFont(e, font.id)}
+                                            onClick={(e) => deleteFont(e, font.id, font.fontFamily, true)}
                                             className="p-1 rounded-md bg-red-500/20 text-red-400 hover:bg-red-500/30"
                                             title="Delete"
                                         >

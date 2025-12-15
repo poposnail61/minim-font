@@ -7,12 +7,19 @@ export async function GET(req: NextRequest) {
         const { searchParams } = new URL(req.url);
         const dirType = searchParams.get("dir") === "release" ? "release" : "test";
 
-        const publicDir = path.join(process.cwd(), "public");
-        const targetDir = path.join(publicDir, dirType);
+        let targetDir = "";
+
+        if (dirType === "release") {
+            targetDir = path.join(process.cwd(), "dist");
+        } else {
+            targetDir = path.join(process.cwd(), "public", "test");
+        }
 
         try {
             await fs.access(targetDir);
         } catch {
+            // If checking release, and dist doesn't exist, try public/release for backward compatibility or just return empty
+            // For now, let's just return empty if not found
             return NextResponse.json({ fonts: [] });
         }
 
@@ -23,18 +30,44 @@ export async function GET(req: NextRequest) {
             if (!entry.isDirectory()) continue;
 
             const fontId = entry.name;
-            const fontDir = path.join(targetDir, fontId);
+            const fontBaseDir = path.join(targetDir, fontId);
+
+            // New structure has 'css' subdirectory
+            // Check if 'css' dir exists, otherwise fallback to root (for old structure compatibility if needed, but we are refactoring)
+            const cssDir = path.join(fontBaseDir, "css");
+            let cssFileDir = cssDir;
+
+            // If css dir doesn't exist, check base dir (backward compatibility or if manual copy)
+            try {
+                await fs.access(cssDir);
+            } catch {
+                cssFileDir = fontBaseDir;
+            }
 
             try {
-                const files = await fs.readdir(fontDir);
+                const files = await fs.readdir(cssFileDir);
                 const cssFile = files.find(f => f.endsWith('.css'));
 
                 if (cssFile) {
-                    const stats = await fs.stat(path.join(fontDir, cssFile));
+                    const stats = await fs.stat(path.join(cssFileDir, cssFile));
+
+                    let cssUrl = "";
+                    if (dirType === "release") {
+                        // Point to local CDN proxy: /api/cdn/Family/css/Family.css
+                        // If it came from cssDir, include /css/ in path
+                        const subPath = cssFileDir === cssDir ? "css/" : "";
+                        cssUrl = `/api/cdn/${fontId}/${subPath}${cssFile}`;
+                    } else {
+                        // Point to public/test
+                        // If it came from cssDir, include /css/ in path
+                        const subPath = cssFileDir === cssDir ? "css/" : "";
+                        cssUrl = `/test/${fontId}/${subPath}${cssFile}`;
+                    }
+
                     fontMap.set(fontId, {
                         id: fontId,
                         fontFamily: path.parse(cssFile).name,
-                        cssUrl: `/${dirType}/${fontId}/${cssFile}`,
+                        cssUrl: cssUrl,
                         createdAt: stats.birthtime
                     });
                 }

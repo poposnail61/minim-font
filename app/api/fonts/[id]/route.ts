@@ -13,10 +13,18 @@ export async function DELETE(
             return NextResponse.json({ error: "Font ID is required" }, { status: 400 });
         }
 
-        const testDir = path.join(process.cwd(), "public", "test", id);
+        const { searchParams } = new URL(req.url);
+        const dirType = searchParams.get("dir") === "release" ? "release" : "test";
+
+        let targetDir = "";
+        if (dirType === "release") {
+            targetDir = path.join(process.cwd(), "dist", id);
+        } else {
+            targetDir = path.join(process.cwd(), "public", "test", id);
+        }
 
         try {
-            await fs.rm(testDir, { recursive: true, force: true });
+            await fs.rm(targetDir, { recursive: true, force: true });
         } catch (e) {
             console.error("Error deleting directory:", e);
         }

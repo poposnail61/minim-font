@@ -1,61 +1,87 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs/promises";
+import fs from "fs";
 import path from "path";
-import { exec } from "child_process";
-import util from "util";
-
-const execPromise = util.promisify(exec);
+import { execSync } from "child_process";
 
 export async function POST(req: NextRequest) {
     try {
-        const { id } = await req.json();
+        const body = await req.json();
+        const { id, fontFamily } = body;
 
         if (!id) {
             return NextResponse.json({ error: "Font ID is required" }, { status: 400 });
         }
 
+        // Use provided fontFamily or fallback to ID
+        const targetFontName = fontFamily || id;
+
         const publicDir = path.join(process.cwd(), "public");
-        const sourceDir = path.join(publicDir, "test", id);
-        const targetDir = path.join(publicDir, "release", id);
+        const sourceBaseDir = path.join(publicDir, "test", id); // Source is using ID (which is now same as FamilyName usually)
+
+        const sourceFontsDir = path.join(sourceBaseDir, "fonts");
+        const sourceCssDir = path.join(sourceBaseDir, "css");
 
         // Check source existence
-        try {
-            await fs.access(sourceDir);
-        } catch {
+        if (!fs.existsSync(sourceBaseDir)) {
             return NextResponse.json({ error: "Test font not found" }, { status: 404 });
         }
 
-        // Clean target directory if exists
-        await fs.rm(targetDir, { recursive: true, force: true });
+        // Define the destination directory in root 'dist' folder
+        const releaseBaseDir = path.join(process.cwd(), "dist", targetFontName);
 
-        // Create target directory
-        await fs.mkdir(targetDir, { recursive: true });
+        // Define release subdirectories
+        // For dist, we want 'css' and 'fonts' separated? Or flattened?
+        // User asked for: "Run domain but we provide CDN... release only uploaded to public/font... wait."
+        // "3-1. release file only... test state in font manager"
+        // "4. user domain vs local CDN"
+        // Let's stick to the structured format: dist/FamilyName/css/ and dist/FamilyName/fonts/
 
-        // Copy all files recursively
-        await fs.cp(sourceDir, targetDir, { recursive: true });
+        const releaseCssDir = path.join(releaseBaseDir, "css");
+        const releaseFontsDir = path.join(releaseBaseDir, "fonts");
 
-        // --- Auto Git Push Logic ---
+        // Cleanup & Create release directory
+        if (fs.existsSync(releaseBaseDir)) {
+            fs.rmSync(releaseBaseDir, { recursive: true, force: true });
+        }
+        fs.mkdirSync(releaseCssDir, { recursive: true });
+        fs.mkdirSync(releaseFontsDir, { recursive: true });
+
+        // Copy directories
+        // dist/[Family]/fonts/
+        fs.cpSync(sourceFontsDir, releaseFontsDir, { recursive: true });
+        // dist/[Family]/css/
+        fs.cpSync(sourceCssDir, releaseCssDir, { recursive: true });
+
+        // Git operations
         try {
-            const fontName = id; // Use the ID as the font name for the commit message
-            console.log(`Starting auto-push for release: ${fontName}`);
+            // Configure git user (if not already configured globally)
+            try {
+                execSync('git config user.name "Minim Font Manager"', { cwd: process.cwd(), stdio: 'ignore' });
+                execSync('git config user.email "font-manager@minim.com"', { cwd: process.cwd(), stdio: 'ignore' });
+            } catch (e) {
+                // Ignore config errors
+            }
 
-            // 1. Add changes
-            await execPromise('git add .');
+            // Add changes in dist folder
+            execSync(`git add dist/${targetFontName}`, { cwd: process.cwd() });
 
-            // 2. Commit
-            await execPromise(`git commit -m "release: update font ${fontName}"`);
+            // Commit
+            const commitMsg = `release: update font ${targetFontName}`;
+            execSync(`git commit -m "${commitMsg}"`, { cwd: process.cwd() });
 
-            // 3. Push
-            await execPromise('git push');
+            // Push
+            execSync('git push', { cwd: process.cwd() });
 
-            console.log("Auto-push completed successfully.");
+            console.log('Git push successful');
         } catch (gitError) {
-            console.error("Auto-push failed:", gitError);
-            // We don't fail the request if git push fails, but we verify it in logs.
-            // Or we could return a warning. for now just log it.
+            console.error('Git operation failed:', gitError);
         }
 
-        return NextResponse.json({ success: true });
+        // Construct the CSS URL for local CDN usage
+        // Note: New path structure is dist/Family/css/Family.css
+        const cssUrl = `/api/cdn/${targetFontName}/css/${targetFontName}.css`;
+
+        return NextResponse.json({ success: true, cssUrl });
 
     } catch (error) {
         console.error("Release error:", error);
