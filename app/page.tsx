@@ -216,34 +216,7 @@ export default function Home() {
                     </div>
                 </div>
             )}
-            {deleteTargetFont && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-gray-900 border border-gray-700 p-6 rounded-2xl shadow-2xl max-w-md w-full space-y-4 m-4 animate-in zoom-in-95 duration-200">
-                        <div className="space-y-2">
-                            <h3 className="text-xl font-bold text-white">Delete Font?</h3>
-                            <p className="text-gray-400 text-sm">
-                                Are you sure you want to delete <b>{deleteTargetFont.fontFamily}</b>?
-                                <br />
-                                <span className="text-red-400 text-xs mt-1 block">This action cannot be undone.</span>
-                            </p>
-                        </div>
-                        <div className="flex gap-3 justify-end pt-2">
-                            <button
-                                onClick={() => setDeleteTargetFont(null)}
-                                className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleConfirmDelete}
-                                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm font-medium transition-colors"
-                            >
-                                Delete
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+
             {releaseTargetFont && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-gray-900 border border-gray-700 p-6 rounded-2xl shadow-2xl max-w-md w-full space-y-4 m-4 animate-in zoom-in-95 duration-200">
@@ -280,284 +253,316 @@ export default function Home() {
                 </div>
 
                 {/* Usage Guide */}
-                <div className="bg-gray-900/40 border border-gray-800 rounded-2xl p-6 space-y-4">
-                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                        <span className="w-1.5 h-6 bg-blue-500 rounded-full"></span>
+                <div className="mt-12 w-full max-w-4xl space-y-4">
+                    <h2 className="text-2xl font-bold text-white flex items-center gap-2">
                         How to Use
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-                        <div className="space-y-2">
-                            <p className="text-gray-400 font-medium">1. HTML (CDN)</p>
-                            <div className="bg-black/50 p-3 rounded-lg border border-white/10 font-mono text-gray-300 break-all select-all">
-                                &lt;link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/poposnail61/minim-font@main/dist/[FontName]/[FontName].css" /&gt;
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <p className="text-gray-400 font-medium">2. CSS Import (CDN)</p>
-                            <div className="bg-black/50 p-3 rounded-lg border border-white/10 font-mono text-gray-300 break-all select-all">
-                                @import url("https://cdn.jsdelivr.net/gh/poposnail61/minim-font@main/dist/[FontName]/[FontName].css");
-                            </div>
-                        </div>
-                        <div className="col-span-1 md:col-span-2 space-y-2">
-                            <p className="text-gray-400 font-medium">3. Apply Font Family</p>
-                            <div className="bg-black/50 p-3 rounded-lg border border-white/10 font-mono text-gray-300 select-all">
-                                font-family: "[FontName]";
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                    </h2>
 
-                {/* Upload Section */}
-                <div
-                    className={`
+                    {releaseFonts.length > 0 ? (
+                        <div className="grid gap-4">
+                            {releaseFonts.map(font => {
+                                const cdnCssUrl = `https://cdn.jsdelivr.net/gh/poposnail61/minim-font@main/dist/${font.fontFamily}/css/${font.fontFamily}.css`;
+                                const htmlTag = `<link rel="stylesheet" href="${cdnCssUrl}" />`;
+                                const cssImport = `@import url('${cdnCssUrl}');`;
+
+                                return (
+                                    <div key={font.id} className="bg-gray-900/40 border border-gray-800 rounded-xl p-5 hover:border-gray-700 transition-colors">
+                                        <h3 className="text-lg font-bold text-white mb-3">{font.fontFamily}</h3>
+                                        <div className="grid md:grid-cols-2 gap-4">
+                                            {/* HTML Link */}
+                                            <div className="space-y-1.5">
+                                                <div className="flex justify-between items-center px-1">
+                                                    <span className="text-xs font-medium text-gray-400">HTML</span>
+                                                    <button
+                                                        onClick={() => copyToClipboard(htmlTag)}
+                                                        className="flex items-center gap-1.5 text-[10px] uppercase font-medium tracking-wider text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 px-2 py-0.5 rounded transition-colors"
+                                                    >
+                                                        <Copy className="w-3 h-3" /> Copy
+                                                    </button>
+                                                </div>
+                                                <div className="p-3 rounded-lg bg-black border border-gray-800 font-mono text-xs text-gray-300 overflow-x-auto whitespace-pre-wrap break-all">
+                                                    {htmlTag}
+                                                </div>
+                                            </div>
+
+                                            {/* CSS Import */}
+                                            <div className="space-y-1.5">
+                                                <div className="flex justify-between items-center px-1">
+                                                    <span className="text-xs font-medium text-gray-400">CSS</span>
+                                                    <button
+                                                        onClick={() => copyToClipboard(cssImport)}
+                                                        className="flex items-center gap-1.5 text-[10px] uppercase font-medium tracking-wider text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 px-2 py-0.5 rounded transition-colors"
+                                                    >
+                                                        <Copy className="w-3 h-3" /> Copy
+                                                    </button>
+                                                </div>
+                                                <div className="p-3 rounded-lg bg-black border border-gray-800 font-mono text-xs text-gray-300 overflow-x-auto whitespace-pre-wrap break-all">
+                                                    {cssImport}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <div className="p-8 rounded-xl bg-gray-900/20 border border-gray-800 text-center text-gray-500 italic">
+                            Release a font to see usage instructions here.
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Upload Section */}
+            <div
+                className={`
             relative border-2 border-dashed rounded-2xl p-12 transition-all duration-300 ease-in-out
             flex flex-col items-center justify-center gap-4 cursor-pointer overflow-hidden
             ${isDragOver ? "border-white bg-gray-900/50 scale-[1.02]" : "border-gray-800 hover:border-gray-700 bg-gray-900/20"}
             ${isUploading ? "pointer-events-none opacity-50" : ""}
           `}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    onClick={() => document.getElementById("fileInput")?.click()}
-                >
-                    <input
-                        id="fileInput"
-                        type="file"
-                        className="hidden"
-                        accept=".ttf,.otf"
-                        onChange={handleFileChange}
-                    />
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => document.getElementById("fileInput")?.click()}
+            >
+                <input
+                    id="fileInput"
+                    type="file"
+                    className="hidden"
+                    accept=".ttf,.otf"
+                    onChange={handleFileChange}
+                />
 
-                    <div className="p-4 rounded-full bg-gray-800/50 ring-1 ring-white/10 shadow-xl">
-                        {isUploading ? (
-                            <Loader2 className="w-8 h-8 text-white animate-spin" />
-                        ) : (
-                            <Upload className="w-8 h-8 text-white" />
-                        )}
-                    </div>
-
-                    <div className="text-center space-y-1">
-                        <p className="text-lg font-medium text-white">
-                            {isUploading ? "Processing Font..." : "Click or Drag file to upload"}
-                        </p>
-                        <p className="text-sm text-gray-500">Supports .ttf, .otf</p>
-                        {isUploading && <p className="text-xs text-gray-500 animate-pulse">This may take up to a minute...</p>}
-                    </div>
+                <div className="p-4 rounded-full bg-gray-800/50 ring-1 ring-white/10 shadow-xl">
+                    {isUploading ? (
+                        <Loader2 className="w-8 h-8 text-white animate-spin" />
+                    ) : (
+                        <Upload className="w-8 h-8 text-white" />
+                    )}
                 </div>
 
-                {error && (
-                    <div className="p-4 rounded-xl bg-red-900/20 border border-red-900/50 text-red-200 text-sm text-center">
-                        {error}
-                    </div>
-                )}
-
-                {/* Fonts Lists Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* Test Build Column */}
-                    <div className="space-y-4">
-                        <h2 className="text-xl font-bold text-white px-1 flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
-                            Test Build
-                        </h2>
-                        <div className="space-y-3">
-                            {savedFonts.map((font) => (
-                                <div
-                                    key={font.id}
-                                    onClick={() => loadSavedFont(font)}
-                                    className={`group relative p-4 rounded-xl bg-gray-900/20 border transition-all cursor-pointer ${result?.fontId === font.id ? 'border-yellow-500/50 bg-yellow-500/5' : 'border-gray-800 hover:border-gray-600 hover:bg-gray-900/40'}`}
-                                >
-                                    <div className="flex items-start justify-between mb-2">
-                                        <div className="font-medium text-white truncate pr-16">{font.fontFamily}</div>
-                                        <div className="text-[10px] text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded">TEST</div>
-                                    </div>
-                                    <div className="text-xs text-gray-500">
-                                        {new Date(font.createdAt).toLocaleDateString()}
-                                    </div>
-
-                                    <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button
-                                            onClick={(e) => triggerRelease(e, font)}
-                                            className="px-2 py-1 rounded-md bg-green-500/20 text-green-400 text-xs font-medium hover:bg-green-500/30"
-                                            title="Release to Production"
-                                        >
-                                            Release
-                                        </button>
-                                        <button
-                                            onClick={(e) => deleteFont(e, font.id, font.fontFamily, false)}
-                                            className="p-1 rounded-md bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                                            title="Delete"
-                                        >
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                            {savedFonts.length === 0 && <p className="text-sm text-gray-600 italic px-2">No test fonts.</p>}
-                        </div>
-                    </div>
-
-                    {/* Release Build Column */}
-                    <div className="space-y-4">
-                        <h2 className="text-xl font-bold text-white px-1 flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                            Release Build
-                        </h2>
-                        <div className="space-y-3">
-                            {releaseFonts.map((font) => (
-                                <div
-                                    key={font.id}
-                                    onClick={() => loadSavedFont(font)}
-                                    className={`group relative p-4 rounded-xl bg-gray-900/20 border transition-all cursor-pointer ${result?.fontId === font.id && result.cssUrl.includes('release') ? 'border-green-500/50 bg-green-500/5' : 'border-gray-800 hover:border-gray-600 hover:bg-gray-900/40'}`}
-                                >
-                                    <div className="flex items-start justify-between mb-2">
-                                        <div className="font-medium text-white truncate pr-16">{font.fontFamily}</div>
-                                        <div className="text-[10px] text-green-500 bg-green-900/30 border border-green-900/50 px-1.5 py-0.5 rounded">PROD</div>
-                                    </div>
-                                    <div className="text-xs text-gray-500">
-                                        Release: {new Date(font.createdAt).toLocaleDateString()}
-                                    </div>
-                                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                const cdnUrl = `https://cdn.jsdelivr.net/gh/poposnail61/minim-font@main/dist/${font.fontFamily}/css/${font.fontFamily}.css`;
-                                                copyToClipboard(cdnUrl);
-                                            }}
-                                            className="p-1 rounded-md bg-blue-500/20 text-blue-400 hover:bg-blue-500/30"
-                                            title="Copy CDN URL"
-                                        >
-                                            <Copy className="w-3.5 h-3.5" />
-                                        </button>
-                                        <button
-                                            onClick={(e) => deleteFont(e, font.id, font.fontFamily, true)}
-                                            className="p-1 rounded-md bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                                            title="Delete"
-                                        >
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                            {releaseFonts.length === 0 && <p className="text-sm text-gray-600 italic px-2">No released fonts.</p>}
-                        </div>
-                    </div>
+                <div className="text-center space-y-1">
+                    <p className="text-lg font-medium text-white">
+                        {isUploading ? "Processing Font..." : "Click or Drag file to upload"}
+                    </p>
+                    <p className="text-sm text-gray-500">Supports .ttf, .otf</p>
+                    {isUploading && <p className="text-xs text-gray-500 animate-pulse">This may take up to a minute...</p>}
                 </div>
+            </div>
 
-                {/* Result Viewer */}
-                {result && (
-                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pt-8 border-t border-gray-800">
-                        <div className="p-6 rounded-2xl bg-gray-900/40 border border-gray-800 space-y-6">
+            {error && (
+                <div className="p-4 rounded-xl bg-red-900/20 border border-red-900/50 text-red-200 text-sm text-center">
+                    {error}
+                </div>
+            )}
 
-                            {/* Header Status */}
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3 text-green-400">
-                                    <CheckCircle className="w-5 h-5" />
-                                    <span className="font-medium">Active Font: {result.fontFamily}</span>
+            {/* Fonts Lists Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Test Build Column */}
+                <div className="space-y-4">
+                    <h2 className="text-xl font-bold text-white px-1 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+                        Test Build
+                    </h2>
+                    <div className="space-y-3">
+                        {savedFonts.map((font) => (
+                            <div
+                                key={font.id}
+                                onClick={() => loadSavedFont(font)}
+                                className={`group relative p-4 rounded-xl bg-gray-900/20 border transition-all cursor-pointer ${result?.fontId === font.id ? 'border-yellow-500/50 bg-yellow-500/5' : 'border-gray-800 hover:border-gray-600 hover:bg-gray-900/40'}`}
+                            >
+                                <div className="flex items-start justify-between mb-2">
+                                    <div className="font-medium text-white truncate pr-16">{font.fontFamily}</div>
+                                    <div className="text-[10px] text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded">TEST</div>
                                 </div>
-                                <div className="text-xs text-gray-500 font-mono">
-                                    ID: {result.fontId}
+                                <div className="text-xs text-gray-500">
+                                    {new Date(font.createdAt).toLocaleDateString()}
                                 </div>
-                            </div>
 
-                            {/* Action Bar */}
-                            <div className="flex items-center justify-between p-3 rounded-lg bg-black/40 border border-white/5">
-                                <span className="text-sm text-gray-400">Generated CSS URL</span>
-                                <div className="flex gap-2">
-                                    <a
-                                        href={result.cssUrl}
-                                        target="_blank"
-                                        className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+                                <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                        onClick={(e) => triggerRelease(e, font)}
+                                        className="px-2 py-1 rounded-md bg-green-500/20 text-green-400 text-xs font-medium hover:bg-green-500/30"
+                                        title="Release to Production"
                                     >
-                                        <Download className="w-3 h-3" />
-                                        Download CSS
-                                    </a>
+                                        Release
+                                    </button>
+                                    <button
+                                        onClick={(e) => deleteFont(e, font.id, font.fontFamily, false)}
+                                        className="p-1 rounded-md bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                                        title="Delete"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
                                 </div>
                             </div>
+                        ))}
+                        {savedFonts.length === 0 && <p className="text-sm text-gray-600 italic px-2">No test fonts.</p>}
+                    </div>
+                </div>
 
-                            {/* Functional Preview with Controls */}
-                            <div className="pt-2 space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Live Preview (Editable)</p>
-
-                                    {/* Controls */}
-                                    <div className="flex items-center gap-6">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs text-gray-400">Size</span>
-                                            <input
-                                                type="range"
-                                                min="12"
-                                                max="128"
-                                                value={previewFontSize}
-                                                onChange={(e) => setPreviewFontSize(Number(e.target.value))}
-                                                className="w-24 h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-white"
-                                            />
-                                            <span className="text-xs text-gray-500 w-6 text-right">{previewFontSize}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs text-gray-400">Weight</span>
-                                            <input
-                                                type="range"
-                                                min="100"
-                                                max="900"
-                                                step="100"
-                                                value={previewFontWeight}
-                                                onChange={(e) => setPreviewFontWeight(Number(e.target.value))}
-                                                className="w-24 h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-white"
-                                            />
-                                            <span className="text-xs text-gray-500 w-6 text-right">{previewFontWeight}</span>
-                                        </div>
-                                    </div>
+                {/* Release Build Column */}
+                <div className="space-y-4">
+                    <h2 className="text-xl font-bold text-white px-1 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                        Release Build
+                    </h2>
+                    <div className="space-y-3">
+                        {releaseFonts.map((font) => (
+                            <div
+                                key={font.id}
+                                onClick={() => loadSavedFont(font)}
+                                className={`group relative p-4 rounded-xl bg-gray-900/20 border transition-all cursor-pointer ${result?.fontId === font.id && result.cssUrl.includes('release') ? 'border-green-500/50 bg-green-500/5' : 'border-gray-800 hover:border-gray-600 hover:bg-gray-900/40'}`}
+                            >
+                                <div className="flex items-start justify-between mb-2">
+                                    <div className="font-medium text-white truncate pr-16">{font.fontFamily}</div>
+                                    <div className="text-[10px] text-green-500 bg-green-900/30 border border-green-900/50 px-1.5 py-0.5 rounded">PROD</div>
                                 </div>
+                                <div className="text-xs text-gray-500">
+                                    Release: {new Date(font.createdAt).toLocaleDateString()}
+                                </div>
+                                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const cdnUrl = `https://cdn.jsdelivr.net/gh/poposnail61/minim-font@main/dist/${font.fontFamily}/css/${font.fontFamily}.css`;
+                                            copyToClipboard(cdnUrl);
+                                        }}
+                                        className="p-1 rounded-md bg-blue-500/20 text-blue-400 hover:bg-blue-500/30"
+                                        title="Copy CDN URL"
+                                    >
+                                        <Copy className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                        onClick={(e) => deleteFont(e, font.id, font.fontFamily, true)}
+                                        className="p-1 rounded-md bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                                        title="Delete"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                        {releaseFonts.length === 0 && <p className="text-sm text-gray-600 italic px-2">No released fonts.</p>}
+                    </div>
+                </div>
+            </div>
 
-                                {/* Dynamically inject CSS for preview */}
-                                <link rel="stylesheet" href={result.cssUrl} />
+            {/* Result Viewer */}
+            {result && (
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pt-8 border-t border-gray-800">
+                    <div className="p-6 rounded-2xl bg-gray-900/40 border border-gray-800 space-y-6">
 
-                                <div
-                                    className="p-8 rounded-lg bg-white/5 border border-white/5 leading-relaxed break-words min-h-[200px] outline-none focus:ring-1 focus:ring-white/20 transition-all"
-                                    contentEditable={true}
-                                    suppressContentEditableWarning={true}
-                                    style={{
-                                        fontFamily: `"${result.fontFamily}", sans-serif`,
-                                        fontSize: `${previewFontSize}px`,
-                                        fontWeight: previewFontWeight
-                                    }}
+                        {/* Header Status */}
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3 text-green-400">
+                                <CheckCircle className="w-5 h-5" />
+                                <span className="font-medium">Active Font: {result.fontFamily}</span>
+                            </div>
+                            <div className="text-xs text-gray-500 font-mono">
+                                ID: {result.fontId}
+                            </div>
+                        </div>
+
+                        {/* Action Bar */}
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-black/40 border border-white/5">
+                            <span className="text-sm text-gray-400">Generated CSS URL</span>
+                            <div className="flex gap-2">
+                                <a
+                                    href={result.cssUrl}
+                                    target="_blank"
+                                    className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
                                 >
-                                    <p>다람쥐 헌 쳇바퀴에 타고파.</p>
-                                    <p className="mt-2">The quick brown fox jumps over the lazy dog.</p>
-                                    <p className="mt-2">1234567890 !@#$%^&*()</p>
-                                </div>
-                                <div className="text-xs text-gray-600 mt-2 flex justify-between">
-                                    <span>Font Family applied: <span className="font-mono text-gray-400">{result.fontFamily}</span></span>
-                                    <span className="text-gray-500">Edit text above to test</span>
+                                    <Download className="w-3 h-3" />
+                                    Download CSS
+                                </a>
+                            </div>
+                        </div>
+
+                        {/* Functional Preview with Controls */}
+                        <div className="pt-2 space-y-4">
+                            <div className="flex items-center justify-between">
+                                <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Live Preview (Editable)</p>
+
+                                {/* Controls */}
+                                <div className="flex items-center gap-6">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-gray-400">Size</span>
+                                        <input
+                                            type="range"
+                                            min="12"
+                                            max="128"
+                                            value={previewFontSize}
+                                            onChange={(e) => setPreviewFontSize(Number(e.target.value))}
+                                            className="w-24 h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-white"
+                                        />
+                                        <span className="text-xs text-gray-500 w-6 text-right">{previewFontSize}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-gray-400">Weight</span>
+                                        <input
+                                            type="range"
+                                            min="100"
+                                            max="900"
+                                            step="100"
+                                            value={previewFontWeight}
+                                            onChange={(e) => setPreviewFontWeight(Number(e.target.value))}
+                                            className="w-24 h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-white"
+                                        />
+                                        <span className="text-xs text-gray-500 w-6 text-right">{previewFontWeight}</span>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Code Viewer */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <p className="text-xs text-gray-500 mb-2 uppercase tracking-wider font-semibold">Generated CSS Content</p>
-                                    <div className="relative group">
-                                        <textarea
-                                            className="w-full h-64 p-4 rounded-lg bg-black border border-white/10 text-xs font-mono text-gray-400 focus:outline-none focus:border-white/20 resize-none"
-                                            value={result.cssContent || ""}
-                                            readOnly
-                                        />
-                                    </div>
-                                </div>
-                                <div>
-                                    <p className="text-xs text-gray-500 mb-2 uppercase tracking-wider font-semibold">Processing Logs</p>
+                            {/* Dynamically inject CSS for preview */}
+                            <link rel="stylesheet" href={result.cssUrl} />
+
+                            <div
+                                className="p-8 rounded-lg bg-white/5 border border-white/5 leading-relaxed break-words min-h-[200px] outline-none focus:ring-1 focus:ring-white/20 transition-all"
+                                contentEditable={true}
+                                suppressContentEditableWarning={true}
+                                style={{
+                                    fontFamily: `"${result.fontFamily}", sans-serif`,
+                                    fontSize: `${previewFontSize}px`,
+                                    fontWeight: previewFontWeight
+                                }}
+                            >
+                                <p>다람쥐 헌 쳇바퀴에 타고파.</p>
+                                <p className="mt-2">The quick brown fox jumps over the lazy dog.</p>
+                                <p className="mt-2">1234567890 !@#$%^&*()</p>
+                            </div>
+                            <div className="text-xs text-gray-600 mt-2 flex justify-between">
+                                <span>Font Family applied: <span className="font-mono text-gray-400">{result.fontFamily}</span></span>
+                                <span className="text-gray-500">Edit text above to test</span>
+                            </div>
+                        </div>
+
+                        {/* Code Viewer */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <p className="text-xs text-gray-500 mb-2 uppercase tracking-wider font-semibold">Generated CSS Content</p>
+                                <div className="relative group">
                                     <textarea
-                                        className="w-full h-64 p-4 rounded-lg bg-black border border-white/10 text-xs font-mono text-gray-500 focus:outline-none resize-none"
-                                        value={result.logs || "No logs available."}
+                                        className="w-full h-64 p-4 rounded-lg bg-black border border-white/10 text-xs font-mono text-gray-400 focus:outline-none focus:border-white/20 resize-none"
+                                        value={result.cssContent || ""}
                                         readOnly
                                     />
                                 </div>
                             </div>
-
+                            <div>
+                                <p className="text-xs text-gray-500 mb-2 uppercase tracking-wider font-semibold">Processing Logs</p>
+                                <textarea
+                                    className="w-full h-64 p-4 rounded-lg bg-black border border-white/10 text-xs font-mono text-gray-500 focus:outline-none resize-none"
+                                    value={result.logs || "No logs available."}
+                                    readOnly
+                                />
+                            </div>
                         </div>
+
                     </div>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 }
