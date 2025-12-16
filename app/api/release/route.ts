@@ -52,53 +52,45 @@ export async function POST(req: NextRequest) {
         // dist/[Family]/css/
         fs.cpSync(sourceCssDir, releaseCssDir, { recursive: true });
 
-        // Update README.md
+        // Update README.md with detailed usage
         try {
             const readmePath = path.join(process.cwd(), "README.md");
-            if (fs.existsSync(readmePath)) {
+            const distPath = path.join(process.cwd(), "dist");
+
+            if (fs.existsSync(readmePath) && fs.existsSync(distPath)) {
                 let readmeContent = fs.readFileSync(readmePath, 'utf-8');
-                const tableHeader = "| Font ID | Font Family | Example CDN URL |";
-                const tableDivider = "| :--- | :--- | :--- |";
+                const startMarker = "<!-- FONTS_USAGE_START -->";
+                const endMarker = "<!-- FONTS_USAGE_END -->";
 
-                // Check if table exists, if not, create it
-                if (!readmeContent.includes(tableHeader)) {
-                    // Find insertion point (e.g., before Features or at end)
-                    const insertMarker = "## Features";
-                    const newTable = `### Supported Fonts\n\n${tableHeader}\n${tableDivider}\n\n`;
-                    if (readmeContent.includes(insertMarker)) {
-                        readmeContent = readmeContent.replace(insertMarker, `${newTable}${insertMarker}`);
-                    } else {
-                        readmeContent += `\n${newTable}`;
-                    }
-                }
+                if (readmeContent.includes(startMarker) && readmeContent.includes(endMarker)) {
+                    const releasedFonts = fs.readdirSync(distPath).filter(file => {
+                        return fs.statSync(path.join(distPath, file)).isDirectory();
+                    });
 
-                // Check if font already exists in table
-                const fontRowPart = `| \`${targetFontName}\` |`;
-                if (!readmeContent.includes(fontRowPart)) {
-                    const newRow = `| \`${targetFontName}\` | \`${targetFontName}\` | \`.../dist/${targetFontName}/css/${targetFontName}.css\` |`;
-                    // Insert after the last pipe character of the table section
-                    // We look for the divider and append after the last row in that block.
-                    // Simplified regex approach: find the table block and append.
-                    // Or simple replacement: find the divider and insert after it (top insertion) or find the end of table.
-                    // Let's Insert at the bottom of the table. Finds the last line starting with `|` after `tableDivider`.
+                    let newUsageContent = "\n";
 
-                    const lines = readmeContent.split('\n');
-                    let lastTableIndex = -1;
-                    for (let i = 0; i < lines.length; i++) {
-                        if (lines[i].trim().startsWith('|')) {
-                            lastTableIndex = i;
-                        } else if (lastTableIndex !== -1 && lines[i].trim() === "") {
-                            // End of table block found
-                            break;
-                        }
+                    if (releasedFonts.length > 0) {
+                        newUsageContent += "The released fonts are served via GitHub and can be used directly through a CDN like **jsDelivr**.\n\n";
                     }
 
-                    if (lastTableIndex !== -1) {
-                        lines.splice(lastTableIndex + 1, 0, newRow);
-                        readmeContent = lines.join('\n');
-                        fs.writeFileSync(readmePath, readmeContent, 'utf-8');
-                        execSync('git add README.md', { cwd: process.cwd() });
-                    }
+                    releasedFonts.forEach(font => {
+                        const cssUrl = `https://cdn.jsdelivr.net/gh/poposnail61/minim-font@main/dist/${font}/css/${font}.css`;
+                        newUsageContent += `### ${font}\n\n`;
+                        newUsageContent += `**1. HTML (Recommended)**\n`;
+                        newUsageContent += "```html\n";
+                        newUsageContent += `<link rel="stylesheet" href="${cssUrl}" />\n`;
+                        newUsageContent += "```\n\n";
+                        newUsageContent += `**2. CSS @import**\n`;
+                        newUsageContent += "```css\n";
+                        newUsageContent += `@import url("${cssUrl}");\n`;
+                        newUsageContent += "```\n\n";
+                    });
+
+                    const regex = new RegExp(`${startMarker}[\\s\\S]*?${endMarker}`);
+                    readmeContent = readmeContent.replace(regex, `${startMarker}${newUsageContent}${endMarker}`);
+
+                    fs.writeFileSync(readmePath, readmeContent, 'utf-8');
+                    execSync('git add README.md', { cwd: process.cwd() });
                 }
             }
         } catch (readmeError) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs/promises";
+import * as fsSync from "fs";
 import path from "path";
 import { execSync } from "child_process";
 
@@ -29,31 +30,57 @@ export async function DELETE(
 
             // If deleting from release, sync with GitHub
             if (dirType === "release") {
+                let readmeUpdated = false;
                 try {
+                    // Update README.md with detailed usage
                     const readmePath = path.join(process.cwd(), "README.md");
-                    let readmeUpdated = false;
+                    const distPath = path.join(process.cwd(), "dist");
 
-                    // Check if README.md exists using fs.access for async check
-                    try {
-                        await fs.access(readmePath); // Check if file exists and is accessible
-                        let readmeContent = await fs.readFile(readmePath, 'utf-8');
-                        const lines = readmeContent.split('\n');
-                        const fontRowPart = `| \`${id}\` |`;
+                    // Use sync operations here for simplicity within the git sync block, 
+                    // or consistent with Release API pattern.
+                    if (fsSync.existsSync(readmePath) && fsSync.existsSync(distPath)) {
+                        let readmeContent = fsSync.readFileSync(readmePath, 'utf-8');
+                        const startMarker = "<!-- FONTS_USAGE_START -->";
+                        const endMarker = "<!-- FONTS_USAGE_END -->";
 
-                        const newLines = lines.filter(line => !line.includes(fontRowPart));
+                        if (readmeContent.includes(startMarker) && readmeContent.includes(endMarker)) {
+                            // Filter out the deleted ID if it still exists in the listing (it shouldn't if we deleted it, but fs.rm is async await above)
+                            // We deleted it above via `await fs.rm`.
+                            const releasedFonts = fsSync.readdirSync(distPath).filter((file: string) => {
+                                return fsSync.statSync(path.join(distPath, file)).isDirectory();
+                            });
+                            // releasedFonts will already NOT include 'id' because we deleted it.
 
-                        if (newLines.length !== lines.length) {
-                            await fs.writeFile(readmePath, newLines.join('\n'), 'utf-8');
+                            let newUsageContent = "\n";
+                            if (releasedFonts.length > 0) {
+                                newUsageContent += "The released fonts are served via GitHub and can be used directly through a CDN like **jsDelivr**.\n\n";
+                            }
+
+                            releasedFonts.forEach((font: string) => {
+                                const cssUrl = `https://cdn.jsdelivr.net/gh/poposnail61/minim-font@main/dist/${font}/css/${font}.css`;
+                                newUsageContent += `### ${font}\n\n`;
+                                newUsageContent += `**1. HTML (Recommended)**\n`;
+                                newUsageContent += "```html\n";
+                                newUsageContent += `<link rel="stylesheet" href="${cssUrl}" />\n`;
+                                newUsageContent += "```\n\n";
+                                newUsageContent += `**2. CSS @import**\n`;
+                                newUsageContent += "```css\n";
+                                newUsageContent += `@import url("${cssUrl}");\n`;
+                                newUsageContent += "```\n\n";
+                            });
+
+                            const regex = new RegExp(`${startMarker}[\\s\\S]*?${endMarker}`);
+                            readmeContent = readmeContent.replace(regex, `${startMarker}${newUsageContent}${endMarker}`);
+
+                            fsSync.writeFileSync(readmePath, readmeContent, 'utf-8');
                             readmeUpdated = true;
                         }
-                    } catch (e: any) {
-                        if (e.code === 'ENOENT') {
-                            console.log("README.md not found, skipping update.");
-                        } else {
-                            console.error("Failed to update README during delete:", e);
-                        }
                     }
+                } catch (e) {
+                    console.error("Failed to update README during delete:", e);
+                }
 
+                try {
                     // Configure git user logic (optional but good safety)
                     try {
                         execSync('git config user.name "Minim Font Manager"', { cwd: process.cwd(), stdio: 'ignore' });
