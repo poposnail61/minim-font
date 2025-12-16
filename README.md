@@ -4,31 +4,34 @@ A web-based tool for managing, splitting, and serving web fonts with optimized C
 
 ## How to Use
 
+<!-- FONTS_USAGE_START -->
 The released fonts are served via GitHub and can be used directly through a CDN like **jsDelivr**.
 
-### 1. HTML (Recommended)
-Add this to your `<head>`:
+### MinimBaseVF
+
+**1. HTML (Recommended)**
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/poposnail61/minim-font@main/dist/[FontName]/[FontName].css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/poposnail61/minim-font@main/dist/MinimBaseVF/css/MinimBaseVF.css" />
 ```
 
-### 2. CSS @import
+**2. CSS @import**
 ```css
-@import url("https://cdn.jsdelivr.net/gh/poposnail61/minim-font@main/dist/[FontName]/[FontName].css");
+@import url("https://cdn.jsdelivr.net/gh/poposnail61/minim-font@main/dist/MinimBaseVF/css/MinimBaseVF.css");
 ```
 
-### 3. Apply Font Family
+### MinimSoftVF
+
+**1. HTML (Recommended)**
+```html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/poposnail61/minim-font@main/dist/MinimSoftVF/css/MinimSoftVF.css" />
+```
+
+**2. CSS @import**
 ```css
-body {
+@import url("https://cdn.jsdelivr.net/gh/poposnail61/minim-font@main/dist/MinimSoftVF/css/MinimSoftVF.css");
 ```
 
-### Supported Fonts
-
-| Font ID | Font Family | Example CDN URL |
-| :--- | :--- | :--- |
-| `MinimBaseVF` | `MinimBaseVF` | `.../dist/MinimBaseVF/MinimBaseVF.css` |
-| `MinimSoftVF` | `MinimSoftVF` | `.../dist/MinimSoftVF/MinimSoftVF.css` |
-
+<!-- FONTS_USAGE_END -->
 ## Features
 - **Automatic Subsetting**: Python script (using `fonttools`) splits fonts by unicode ranges (Hangul, Latin, etc.) for optimal loading.
 - **Variable Font Safe**: Detects and preserves variable font axes.
